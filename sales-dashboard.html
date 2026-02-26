@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f13;
+  --surface: #16161d;
+  --surface2: #1c1c26;
+  --border: #252530;
+  --gold: #d4a843;
+  --gold2: #f0c96a;
+  --teal: #2dd4bf;
+  --rose: #fb7185;
+  --blue: #60a5fa;
+  --purple: #a78bfa;
+  --text: #e8e8f0;
+  --text2: #8888a0;
+  --text3: #55556a;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
+  padding: 0;
+}
+
+/* Background texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(212,168,67,0.07) 0%, transparent 40%),
+    radial-gradient(ellipse at 100% 100%, rgba(45,212,191,0.05) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 32px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(15,15,19,0.95);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-icon {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--gold), var(--gold2));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.brand-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 20px;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-top: 1px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.period-tabs {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.period-tab {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.2s;
+}
+
+.period-tab.active {
+  background: var(--gold);
+  color: #0f0f13;
+  font-weight: 600;
+}
+
+.live-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--teal);
+  font-weight: 500;
+}
+
+.live-dot {
+  width: 7px; height: 7px;
+  background: var(--teal);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* ── MAIN ── */
+main {
+  padding: 28px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.section-label {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+  animation: slideUp 0.5s ease both;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.2s, transform 0.2s;
+  cursor: default;
+}
+
+.kpi-card:hover {
+  border-color: rgba(212,168,67,0.4);
+  transform: translateY(-2px);
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+}
+
+.kpi-card.gold::before  { background: linear-gradient(90deg, var(--gold), var(--gold2)); }
+.kpi-card.teal::before  { background: var(--teal); }
+.kpi-card.rose::before  { background: var(--rose); }
+.kpi-card.blue::before  { background: var(--blue); }
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.kpi-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 34px;
+  line-height: 1;
+  margin-bottom: 10px;
+  letter-spacing: -1px;
+}
+
+.kpi-card.gold .kpi-value  { color: var(--gold2); }
+.kpi-card.teal .kpi-value  { color: var(--teal); }
+.kpi-card.rose .kpi-value  { color: var(--rose); }
+.kpi-card.blue .kpi-value  { color: var(--blue); }
+
+.kpi-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.kpi-change.up   { background: rgba(45,212,191,0.12); color: var(--teal); }
+.kpi-change.down { background: rgba(251,113,133,0.12); color: var(--rose); }
+
+.kpi-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 6px;
+}
+
+/* ── CHARTS ROW ── */
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+  animation: slideUp 0.5s 0.1s ease both;
+}
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.chart-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 17px;
+  color: var(--text);
+}
+
+.chart-subtitle {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 14px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+canvas { max-width: 100%; }
+
+/* ── BOTTOM ROW ── */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+  animation: slideUp 0.5s 0.2s ease both;
+}
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+  grid-column: span 2;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text3);
+  font-weight: 600;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr {
+  border-bottom: 1px solid rgba(37,37,48,0.6);
+  transition: background 0.15s;
+}
+
+tbody tr:hover { background: rgba(255,255,255,0.02); }
+tbody tr:last-child { border-bottom: none; }
+
+td {
+  padding: 13px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.rep-name {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.progress-bar {
+  height: 5px;
+  background: var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  width: 80px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+}
+
+.badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.badge.green  { background: rgba(45,212,191,0.12); color: var(--teal); }
+.badge.yellow { background: rgba(212,168,67,0.15); color: var(--gold2); }
+.badge.red    { background: rgba(251,113,133,0.12); color: var(--rose); }
+
+/* ── DONUT CARD ── */
+.donut-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.donut-wrap {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  margin: 16px auto;
+}
+
+.donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.donut-center-val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 26px;
+  color: var(--gold2);
+  line-height: 1;
+}
+
+.donut-center-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 3px;
+}
+
+.region-list {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.region-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.region-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+}
+
+.region-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+.region-val { font-weight: 600; color: var(--text); }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .charts-row { grid-template-columns: 1fr; }
+  .bottom-row { grid-template-columns: 1fr; }
+  .table-card { grid-column: span 1; }
+}
+
+@media (max-width: 600px) {
+  main { padding: 20px 16px; }
+  header { padding: 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">📊</div>
+    <div>
+      <div class="brand-name">SalesIQ</div>
+      <div class="brand-sub">Revenue Intelligence</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="period-tabs">
+      <button class="period-tab" onclick="setPeriod('Q1',this)">Q1</button>
+      <button class="period-tab" onclick="setPeriod('Q2',this)">Q2</button>
+      <button class="period-tab" onclick="setPeriod('Q3',this)">Q3</button>
+      <button class="period-tab active" onclick="setPeriod('Q4',this)">Q4</button>
+    </div>
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">Key Performance Indicators</div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid">
+    <div class="kpi-card gold">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpi-rev">$4.82M</div>
+      <span class="kpi-change up" id="kpi-rev-ch">↑ 18.4%</span>
+      <div class="kpi-sub">vs previous quarter</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Deals Closed</div>
+      <div class="kpi-value" id="kpi-deals">342</div>
+      <span class="kpi-change up" id="kpi-deals-ch">↑ 12.1%</span>
+      <div class="kpi-sub">vs previous quarter</div>
+    </div>
+    <div class="kpi-card rose">
+      <div class="kpi-label">Avg Deal Size</div>
+      <div class="kpi-value" id="kpi-avg">$14.1K</div>
+      <span class="kpi-change up" id="kpi-avg-ch">↑ 5.7%</span>
+      <div class="kpi-sub">vs previous quarter</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Win Rate</div>
+      <div class="kpi-value" id="kpi-win">67%</div>
+      <span class="kpi-change down" id="kpi-win-ch">↓ 2.3%</span>
+      <div class="kpi-sub">vs previous quarter</div>
+    </div>
+  </div>
+
+  <!-- CHARTS ROW -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Revenue & Target Trend</div>
+          <div class="chart-subtitle">Monthly performance vs target</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div>Revenue</div>
+          <div class="legend-item"><div class="legend-dot" style="background:var(--text3)"></div>Target</div>
+        </div>
+      </div>
+      <canvas id="revenueChart" height="200"></canvas>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Pipeline by Stage</div>
+          <div class="chart-subtitle">Current quarter</div>
+        </div>
+      </div>
+      <canvas id="pipelineChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="section-label">Sales Team & Regional Breakdown</div>
+  <div class="bottom-row">
+
+    <!-- TOP REPS TABLE -->
+    <div class="table-card">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Top Sales Representatives</div>
+          <div class="chart-subtitle">Ranked by revenue closed</div>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Representative</th>
+            <th>Revenue</th>
+            <th>Deals</th>
+            <th>Quota</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="repsTable"></tbody>
+      </table>
+    </div>
+
+    <!-- DONUT CHART -->
+    <div class="donut-card">
+      <div class="chart-title">Revenue by Region</div>
+      <div class="chart-subtitle" style="color:var(--text3);font-size:11px;margin-top:3px;">Geographic distribution</div>
+      <div class="donut-wrap">
+        <canvas id="regionChart"></canvas>
+        <div class="donut-center">
+          <div class="donut-center-val">$4.82M</div>
+          <div class="donut-center-label">Total</div>
+        </div>
+      </div>
+      <div class="region-list" id="regionList"></div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+// ── DATA ──
+const periods = {
+  Q1: {
+    rev: '$3.12M', deals: '241', avg: '$12.9K', win: '61%',
+    revCh: '↑ 8.2%', dealsCh: '↑ 6.4%', avgCh: '↑ 3.1%', winCh: '↑ 1.2%',
+    revChClass: 'up', dealsChClass: 'up', avgChClass: 'up', winChClass: 'up',
+    months: ['Jan','Feb','Mar'],
+    revenue: [820, 950, 1350],
+    target:  [900, 900, 1100],
+    pipeline: [42, 30, 18, 8, 14],
+    reps: [
+      { name: 'Priya Sharma', rev: '$520K', deals: 38, quota: 91, status: 'green' },
+      { name: 'Rahul Mehta', rev: '$480K', deals: 34, quota: 85, status: 'green' },
+      { name: 'Ananya Singh', rev: '$410K', deals: 29, quota: 74, status: 'yellow' },
+      { name: 'Vikram Das', rev: '$350K', deals: 25, quota: 63, status: 'yellow' },
+      { name: 'Neha Gupta', rev: '$290K', deals: 21, quota: 52, status: 'red' },
+    ],
+    regions: [38, 27, 21, 14],
+  },
+  Q2: {
+    rev: '$3.64M', deals: '278', avg: '$13.1K', win: '63%',
+    revCh: '↑ 11.5%', dealsCh: '↑ 9.1%', avgCh: '↑ 2.9%', winCh: '↑ 2.0%',
+    revChClass: 'up', dealsChClass: 'up', avgChClass: 'up', winChClass: 'up',
+    months: ['Apr','May','Jun'],
+    revenue: [1100, 1200, 1340],
+    target:  [1100, 1150, 1200],
+    pipeline: [55, 38, 22, 12, 18],
+    reps: [
+      { name: 'Priya Sharma', rev: '$620K', deals: 44, quota: 108, status: 'green' },
+      { name: 'Vikram Das', rev: '$570K', deals: 40, quota: 99, status: 'green' },
+      { name: 'Rahul Mehta', rev: '$500K', deals: 36, quota: 88, status: 'green' },
+      { name: 'Neha Gupta', rev: '$420K', deals: 30, quota: 75, status: 'yellow' },
+      { name: 'Ananya Singh', rev: '$340K', deals: 24, quota: 60, status: 'yellow' },
+    ],
+    regions: [40, 25, 22, 13],
+  },
+  Q3: {
+    rev: '$4.10M', deals: '305', avg: '$13.4K', win: '65%',
+    revCh: '↑ 14.2%', dealsCh: '↑ 9.7%', avgCh: '↑ 3.5%', winCh: '↑ 2.1%',
+    revChClass: 'up', dealsChClass: 'up', avgChClass: 'up', winChClass: 'up',
+    months: ['Jul','Aug','Sep'],
+    revenue: [1280, 1350, 1470],
+    target:  [1250, 1300, 1350],
+    pipeline: [60, 42, 28, 14, 20],
+    reps: [
+      { name: 'Priya Sharma', rev: '$710K', deals: 50, quota: 118, status: 'green' },
+      { name: 'Rahul Mehta', rev: '$640K', deals: 45, quota: 107, status: 'green' },
+      { name: 'Vikram Das', rev: '$570K', deals: 40, quota: 95, status: 'green' },
+      { name: 'Ananya Singh', rev: '$480K', deals: 34, quota: 80, status: 'yellow' },
+      { name: 'Neha Gupta', rev: '$390K', deals: 28, quota: 65, status: 'yellow' },
+    ],
+    regions: [41, 26, 20, 13],
+  },
+  Q4: {
+    rev: '$4.82M', deals: '342', avg: '$14.1K', win: '67%',
+    revCh: '↑ 18.4%', dealsCh: '↑ 12.1%', avgCh: '↑ 5.7%', winCh: '↓ 2.3%',
+    revChClass: 'up', dealsChClass: 'up', avgChClass: 'up', winChClass: 'down',
+    months: ['Oct','Nov','Dec'],
+    revenue: [1450, 1580, 1790],
+    target:  [1400, 1500, 1600],
+    pipeline: [72, 48, 32, 18, 24],
+    reps: [
+      { name: 'Priya Sharma', rev: '$840K', deals: 58, quota: 134, status: 'green' },
+      { name: 'Rahul Mehta', rev: '$760K', deals: 52, quota: 121, status: 'green' },
+      { name: 'Vikram Das', rev: '$650K', deals: 44, quota: 104, status: 'green' },
+      { name: 'Ananya Singh', rev: '$520K', deals: 36, quota: 83, status: 'yellow' },
+      { name: 'Neha Gupta', rev: '$420K', deals: 29, quota: 67, status: 'yellow' },
+    ],
+    regions: [42, 28, 18, 12],
+  }
+};
+
+const regionNames  = ['North America','Europe','Asia Pacific','Rest of World'];
+const regionColors = ['#d4a843','#2dd4bf','#60a5fa','#a78bfa'];
+const avatarColors = ['#d4a843','#2dd4bf','#fb7185','#60a5fa','#a78bfa'];
+
+let revenueChart, pipelineChart, regionChart;
+let currentPeriod = 'Q4';
+
+function initCharts() {
+  const d = periods[currentPeriod];
+  const gridColor = 'rgba(255,255,255,0.04)';
+  const labelColor = '#55556a';
+  Chart.defaults.color = labelColor;
+  Chart.defaults.font.family = 'DM Sans';
+
+  // Revenue Line Chart
+  revenueChart = new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+      labels: d.months,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: d.revenue,
+          backgroundColor: 'rgba(212,168,67,0.25)',
+          borderColor: '#d4a843',
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false,
+        },
+        {
+          label: 'Target',
+          data: d.target,
+          type: 'line',
+          borderColor: '#55556a',
+          borderWidth: 2,
+          borderDash: [6,4],
+          pointRadius: 0,
+          tension: 0.4,
+          fill: false,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: labelColor } },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: labelColor,
+            callback: v => '$' + (v/1000).toFixed(0) + 'K'
+          }
+        }
+      }
+    }
+  });
+
+  // Pipeline horizontal bar
+  pipelineChart = new Chart(document.getElementById('pipelineChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Prospecting','Qualified','Proposal','Negotiation','Closed'],
+      datasets: [{
+        data: d.pipeline,
+        backgroundColor: ['#2dd4bf','#60a5fa','#a78bfa','#d4a843','#4ade80'],
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: labelColor } },
+        y: { grid: { display: false }, ticks: { color: labelColor } }
+      }
+    }
+  });
+
+  // Region donut
+  regionChart = new Chart(document.getElementById('regionChart'), {
+    type: 'doughnut',
+    data: {
+      labels: regionNames,
+      datasets: [{
+        data: d.regions,
+        backgroundColor: regionColors,
+        borderWidth: 0,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      cutout: '72%',
+      responsive: true,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}%` } } }
+    }
+  });
+
+  renderReps(d.reps);
+  renderRegions(d.regions);
+}
+
+function renderReps(reps) {
+  const tbody = document.getElementById('repsTable');
+  tbody.innerHTML = reps.map((r, i) => `
+    <tr>
+      <td class="rep-name">
+        <div class="avatar" style="background:${avatarColors[i]}22;color:${avatarColors[i]}">${r.name.split(' ').map(n=>n[0]).join('')}</div>
+        ${r.name}
+      </td>
+      <td style="font-weight:600">${r.rev}</td>
+      <td>${r.deals}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.min(r.quota,100)}%;background:${r.quota>=100?'var(--teal)':r.quota>=75?'var(--gold)':'var(--rose)'}"></div></div>
+          <span style="font-size:11px;color:var(--text2)">${r.quota}%</span>
+        </div>
+      </td>
+      <td><span class="badge ${r.status}">${r.quota>=100?'Exceeded':r.quota>=75?'On Track':'At Risk'}</span></td>
+    </tr>
+  `).join('');
+}
+
+function renderRegions(data) {
+  const el = document.getElementById('regionList');
+  el.innerHTML = regionNames.map((n, i) => `
+    <div class="region-item">
+      <div class="region-name">
+        <div class="region-dot" style="background:${regionColors[i]}"></div>
+        ${n}
+      </div>
+      <div class="region-val">${data[i]}%</div>
+    </div>
+  `).join('');
+}
+
+function setPeriod(p, btn) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const d = periods[p];
+  document.getElementById('kpi-rev').textContent = d.rev;
+  document.getElementById('kpi-deals').textContent = d.deals;
+  document.getElementById('kpi-avg').textContent = d.avg;
+  document.getElementById('kpi-win').textContent = d.win;
+
+  document.getElementById('kpi-rev-ch').textContent = d.revCh;
+  document.getElementById('kpi-rev-ch').className = `kpi-change ${d.revChClass}`;
+  document.getElementById('kpi-deals-ch').textContent = d.dealsCh;
+  document.getElementById('kpi-deals-ch').className = `kpi-change ${d.dealsChClass}`;
+  document.getElementById('kpi-avg-ch').textContent = d.avgCh;
+  document.getElementById('kpi-avg-ch').className = `kpi-change ${d.avgChClass}`;
+  document.getElementById('kpi-win-ch').textContent = d.winCh;
+  document.getElementById('kpi-win-ch').className = `kpi-change ${d.winChClass}`;
+
+  revenueChart.data.labels = d.months;
+  revenueChart.data.datasets[0].data = d.revenue;
+  revenueChart.data.datasets[1].data = d.target;
+  revenueChart.update();
+
+  pipelineChart.data.datasets[0].data = d.pipeline;
+  pipelineChart.update();
+
+  regionChart.data.datasets[0].data = d.regions;
+  regionChart.update();
+
+  renderReps(d.reps);
+  renderRegions(d.regions);
+}
+
+initCharts();
+</script>
+</body>
+</html>
